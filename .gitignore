@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Env
+.env
+
+# Data
+*.csv
+
+# Jupyter
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Ignore large ML model
+Backend/models/price_model.pkl
