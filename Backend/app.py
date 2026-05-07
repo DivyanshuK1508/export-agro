@@ -320,6 +320,10 @@ def calculate_market_metrics(yield_value, market_price, export_price, risk_score
 def home():
     return "Backend Running"
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health_check():
+    return {"status": "ok"}
+
 
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
