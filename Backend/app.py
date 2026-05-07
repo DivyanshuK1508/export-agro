@@ -1,7 +1,9 @@
 ﻿import os
 
+
 import joblib
 import pandas as pd
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from special_crops_analytics import SpecialCropsAnalytics
@@ -12,11 +14,36 @@ CORS(app)
 # Initialize analytics
 analytics = SpecialCropsAnalytics()
 
+
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+
+# --- Google Drive download utility ---
+def download_file_from_google_drive(file_id, dest_path):
+    """
+    Downloads a file from Google Drive using gdown for robust handling of large files.
+    """
+    import subprocess
+    try:
+        import gdown
+    except ImportError:
+        print("gdown not found, installing...")
+        subprocess.check_call(["python", "-m", "pip", "install", "gdown"])
+        import gdown
+    url = f"https://drive.google.com/uc?id={file_id}"
+    gdown.download(url, dest_path, quiet=False)
+
+# --- Download price_model.pkl if missing ---
+PRICE_MODEL_PATH = os.path.join(MODEL_DIR, 'price_model.pkl')
+PRICE_MODEL_FILE_ID = '1UkbWIPGqGGbGcIdhEIJ194V_RVEn6kbL'  # Google Drive file ID for price_model.pkl
+if not os.path.exists(PRICE_MODEL_PATH):
+    print(f"Downloading {PRICE_MODEL_PATH} from Google Drive...")
+    os.makedirs(os.path.dirname(PRICE_MODEL_PATH), exist_ok=True)
+    download_file_from_google_drive(PRICE_MODEL_FILE_ID, PRICE_MODEL_PATH)
+    print("Download complete.")
 
 crop_model = joblib.load(os.path.join(MODEL_DIR, "crop_model.pkl"))
 yield_model = joblib.load(os.path.join(MODEL_DIR, "yield_model.pkl"))
-price_model = joblib.load(os.path.join(MODEL_DIR, "price_model.pkl"))
+price_model = joblib.load(PRICE_MODEL_PATH)
 
 crop_encoders = joblib.load(os.path.join(MODEL_DIR, "encoders.pkl"))
 yield_encoders = joblib.load(os.path.join(MODEL_DIR, "yield_encoders.pkl"))
