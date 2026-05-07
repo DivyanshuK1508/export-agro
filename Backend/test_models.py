@@ -1,7 +1,37 @@
+
+import os
 import joblib
 import pandas as pd
 import warnings
+import requests
 warnings.filterwarnings('ignore')
+
+# --- Google Drive download utility ---
+def download_file_from_google_drive(file_id, dest_path):
+    URL = "https://drive.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = None
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            token = value
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+    CHUNK_SIZE = 32768
+    with open(dest_path, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk:
+                f.write(chunk)
+
+# --- Download price_model.pkl if missing ---
+PRICE_MODEL_PATH = 'models/price_model.pkl'
+PRICE_MODEL_FILE_ID = '1UkbWIPGqGGbGcIdhEIJ194V_RVEn6kbL'  # Google Drive file ID for price_model.pkl
+if not os.path.exists(PRICE_MODEL_PATH):
+    print(f"Downloading {PRICE_MODEL_PATH} from Google Drive...")
+    os.makedirs(os.path.dirname(PRICE_MODEL_PATH), exist_ok=True)
+    download_file_from_google_drive(PRICE_MODEL_FILE_ID, PRICE_MODEL_PATH)
+    print("Download complete.")
 
 # Load all models
 crop_model = joblib.load('models/crop_model.pkl')
@@ -12,7 +42,7 @@ yield_model = joblib.load('models/yield_model.pkl')
 yield_encoders = joblib.load('models/yield_encoders.pkl')
 yield_features = joblib.load('models/yield_features.pkl')
 
-price_model = joblib.load('models/price_model.pkl')
+price_model = joblib.load(PRICE_MODEL_PATH)
 price_encoders = joblib.load('models/price_encoders.pkl')
 price_features = joblib.load('models/price_features.pkl')
 
